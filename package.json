@@ -1,0 +1,20 @@
+{
+  "name": "compia-editora-loja",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "eslint": "^9.31.0",
+    "eslint-config-next": "16.2.10",
+    "mysql2": "^3.11.5",
+    "next": "16.2.10",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {}
+}
