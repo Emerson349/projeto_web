@@ -1,12 +1,3 @@
--- Garantir que as tabelas sejam recriadas com a estrutura correta
-SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS product_tags;
-DROP TABLE IF EXISTS product_categories;
-DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS tags;
-DROP TABLE IF EXISTS categories;
-SET FOREIGN_KEY_CHECKS = 1;
-
 -- Criação da tabela de Categorias
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -23,7 +14,7 @@ CREATE TABLE IF NOT EXISTS tags (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Criação da tabela de Produtos (Livros Físicos e E-books) alinhada com o Repositório
+-- Criação da tabela de Produtos
 CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -41,7 +32,7 @@ CREATE TABLE IF NOT EXISTS products (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Tabela intermediária de Produto e Categoria (Relacionamento N:M)
+-- Tabela intermediária de Produto e Categoria
 CREATE TABLE IF NOT EXISTS product_categories (
     product_id INT NOT NULL,
     category_id INT NOT NULL,
@@ -50,7 +41,7 @@ CREATE TABLE IF NOT EXISTS product_categories (
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 
--- Tabela intermediária de Produto e Tag (Relacionamento N:M)
+-- Tabela intermediária de Produto e Tag
 CREATE TABLE IF NOT EXISTS product_tags (
     product_id INT NOT NULL,
     tag_id INT NOT NULL,

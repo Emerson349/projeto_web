@@ -3,7 +3,7 @@ const path = require('path');
 const mysql = require('mysql2/promise');
 
 async function main() {
-  console.log('=== Executando Schema no Banco de Dados (Aiven) ===');
+  console.log('=== Executando Schema no Banco de Dados (TiDB) ===');
 
   // 1. Carrega o .env.local
   const envPath = path.join(__dirname, '.env.local');
@@ -26,38 +26,27 @@ async function main() {
     process.env[key] = val;
   });
 
-  // 2. Configura SSL via arquivo físico
-  let sslConfig = null;
-  if (process.env.MYSQL_SSL_CA_PATH) {
-    try {
-      const absolutePath = path.resolve(__dirname, process.env.MYSQL_SSL_CA_PATH);
-      sslConfig = { ca: fs.readFileSync(absolutePath), rejectUnauthorized: true };
-    } catch (err) {
-      console.error('Erro ao ler SSL:', err.message);
-      process.exit(1);
-    }
-  } else {
-    sslConfig = { rejectUnauthorized: false };
-  }
-
-  // 3. Conecta ao Banco
+  // 2. Conecta ao Banco (O TiDB usa SSL nativo sem precisar de arquivo CA físico)
   const connection = await mysql.createConnection({
     host: process.env.MYSQL_HOST,
-    port: Number(process.env.MYSQL_PORT || 3306),
+    port: Number(process.env.MYSQL_PORT || 4000), // TiDB geralmente usa a porta 4000
     database: process.env.MYSQL_DATABASE,
     user: process.env.MYSQL_USER,
     password: process.env.MYSQL_PASSWORD,
-    ssl: sslConfig,
+    ssl: { 
+      minVersion: 'TLSv1.2', 
+      rejectUnauthorized: true 
+    },
     multipleStatements: true // Permite rodar o arquivo SQL inteiro de uma vez
   });
 
-  // 4. Lê e Executa o schema.sql
+  // 3. Lê e Executa o schema.sql
   try {
     const schemaPath = path.join(__dirname, 'database', 'schema.sql');
     console.log(`Lendo o arquivo schema.sql em: ${schemaPath}...`);
     const sql = fs.readFileSync(schemaPath, 'utf8');
 
-    console.log('Enviando comandos para o Aiven...');
+    console.log('Enviando comandos para o TiDB...');
     await connection.query(sql);
     console.log('🎉 Tabelas criadas com sucesso!');
   } catch (err) {
