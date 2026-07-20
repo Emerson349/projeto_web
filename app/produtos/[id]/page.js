@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getProductBySlug } from '@/repositories/productsRepository';
+import AddToCartButton from '@/components/AddToCartButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,10 +14,14 @@ function formatPrice(value) {
 }
 
 export default async function ProductDetailPage({ params }) {
+  const { id } = await params;
+
+  console.log('ID:', id);
+
   let product;
 
   try {
-    product = await getProductBySlug(params.id);
+    product = await getProductBySlug(id);
   } catch (error) {
     product = null;
   }
@@ -41,6 +46,16 @@ export default async function ProductDetailPage({ params }) {
           <h1 className="page-title">{product.title}</h1>
           <p className="product-author">Por {product.author}</p>
           <strong className="detail-price">{formatPrice(product.price)}</strong>
+
+          <AddToCartButton
+            product={{
+              id: product.id,
+              name: product.title,
+              price: product.price,
+              cover_url: product.cover_url
+            }}
+          />
+
           <p>{product.description}</p>
 
           <dl className="product-specs">

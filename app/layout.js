@@ -1,5 +1,6 @@
 import './globals.css';
 import { AdminAuthProvider } from '@/contexts/AdminAuthContext';
+import { CartProvider } from '@/contexts/CartContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -12,11 +13,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
       <body>
-        <AdminAuthProvider>
-          <Header />
-          <main className="site-main">{children}</main>
-          <Footer />
-        </AdminAuthProvider>
+        <CartProvider>
+          <AdminAuthProvider>
+            <Header />
+            <main className="site-main">{children}</main>
+            <Footer />
+          </AdminAuthProvider>
+        </CartProvider>
       </body>
     </html>
   );

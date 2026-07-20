@@ -12,8 +12,9 @@ export default async function ProductsPage() {
   try {
     [products, categories] = await Promise.all([getProducts(), getAllCategories()]);
   } catch (error) {
-    loadError = true;
-  }
+  console.error(error);
+  loadError = true;
+}
 
   return (
     <section className="page-section">

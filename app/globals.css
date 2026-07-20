@@ -662,3 +662,45 @@ button {
     grid-template-columns: minmax(0, 1fr) 280px;
   }
 }
+
+/* Garante que o link seja um container flexível e alinhado com o menu */
+.cart-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* O segredo está aqui: o wrapper precisa ser relative para o badge se fixar nele */
+.cart-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Estilização da bolinha (Badge) */
+.cart-badge {
+  position: absolute;
+  top: -6px;      /* Joga a bolinha um pouco para cima do carrinho */
+  right: -10px;    /* Joga a bolinha um pouco para a direita */
+  
+  background-color: #115e59; /* Cor verde combinando com a sua logo (ou mude para #e11d48 se quiser vermelho) */
+  color: white;
+  
+  font-size: 0.7rem;
+  font-weight: bold;
+  border-radius: 50%;
+  
+  /* Cria uma bolinha perfeitamente redonda */
+  min-width: 16px;
+  height: 16px;
+  
+  /* Centraliza o número exatamente no meio da bolinha */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Dá um leve espaçamento para o número não colar na borda do carrinho */
+  border: 2px solid white; 
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
