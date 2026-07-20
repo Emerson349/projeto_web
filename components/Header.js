@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import CartButton from '@/components/CartButton';
 
 export default function Header() {
   return (
@@ -14,6 +15,9 @@ export default function Header() {
         <nav className="main-nav" aria-label="Navegação principal">
           <Link href="/produtos">Produtos</Link>
           <Link href="/admin/produtos">Admin</Link>
+          
+          {/* O botão dinâmico entra aqui */}
+          <CartButton />
         </nav>
       </div>
     </header>
