@@ -22,15 +22,16 @@ export async function GET(request, { params }) {
 }
 
 export async function PUT(request, { params }) {
-  if (!isValidAdminPassword(getRequestPassword(request))) {
-    return unauthorizedResponse();
-  }
-
   const { id } = await params;
 
   try {
     const body = await request.json();
     const { status } = body;
+
+    // Se for alteração administrativa diferente de 'pago', exige senha admin
+    if (status !== 'pago' && !isValidAdminPassword(getRequestPassword(request))) {
+      return unauthorizedResponse();
+    }
 
     const validStatuses = ['pendente', 'pago', 'enviado', 'entregue', 'cancelado'];
     if (!validStatuses.includes(status)) {

@@ -448,6 +448,102 @@ export default function CheckoutPage() {
                   </label>
                 </div>
 
+                {/* Campos interativos do Cartão de Crédito */}
+                {form.payment_method === 'cartao' && (
+                  <div className="card-fields-box">
+                    <h3 style={{ fontSize: '1rem', margin: '0 0 12px' }}>Dados do Cartão</h3>
+                    <div className="form-grid">
+                      <div className="form-columns">
+                        <div className="form-row">
+                          <label htmlFor="card_number">Número do Cartão</label>
+                          <input
+                            id="card_number"
+                            value={form.card_number || ''}
+                            onChange={e => {
+                              const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
+                              const formatted = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+                              updateField('card_number', formatted);
+                            }}
+                            placeholder="4532 0000 0000 0000"
+                            required={form.payment_method === 'cartao'}
+                          />
+                        </div>
+                        <div className="form-row">
+                          <label htmlFor="card_brand">Bandeira</label>
+                          <select
+                            id="card_brand"
+                            value={form.card_brand || 'visa'}
+                            onChange={e => updateField('card_brand', e.target.value)}
+                          >
+                            <option value="visa">Visa</option>
+                            <option value="mastercard">MasterCard</option>
+                            <option value="elo">Elo</option>
+                            <option value="hipercard">Hipercard</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <label htmlFor="card_name">Nome Impresso no Cartão</label>
+                        <input
+                          id="card_name"
+                          value={form.card_name || ''}
+                          onChange={e => updateField('card_name', e.target.value.toUpperCase())}
+                          placeholder="EX: JOAO S SILVA"
+                          required={form.payment_method === 'cartao'}
+                        />
+                      </div>
+
+                      <div className="form-columns">
+                        <div className="form-row">
+                          <label htmlFor="card_expiry">Validade</label>
+                          <input
+                            id="card_expiry"
+                            value={form.card_expiry || ''}
+                            onChange={e => {
+                              const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+                              const formatted = digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+                              updateField('card_expiry', formatted);
+                            }}
+                            placeholder="MM/AA"
+                            required={form.payment_method === 'cartao'}
+                          />
+                        </div>
+                        <div className="form-row">
+                          <label htmlFor="card_cvv">CVV</label>
+                          <input
+                            id="card_cvv"
+                            value={form.card_cvv || ''}
+                            onChange={e => {
+                              const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+                              updateField('card_cvv', digits);
+                            }}
+                            placeholder="123"
+                            required={form.payment_method === 'cartao'}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <label htmlFor="card_installments">Parcelamento</label>
+                        <select
+                          id="card_installments"
+                          value={form.card_installments || '1'}
+                          onChange={e => updateField('card_installments', e.target.value)}
+                        >
+                          <option value="1">1x de {formatPrice(grandTotal)} (sem juros)</option>
+                          <option value="2">2x de {formatPrice(grandTotal / 2)} (sem juros)</option>
+                          <option value="3">3x de {formatPrice(grandTotal / 3)} (sem juros)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="gateway-trust-badge">
+                  <span>🔒 Pagamento processado com segurança via Mercado Pago / PagSeguro</span>
+                </div>
+
                 <div className="checkout-nav-buttons" style={{ marginTop: '20px' }}>
                   <button type="button" className="button secondary" onClick={() => setStep(2)}>
                     ← Voltar
