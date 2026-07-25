@@ -1,5 +1,22 @@
 import { NextResponse } from 'next/server';
-import { createOrder } from '@/repositories/ordersRepository';
+import { createOrder, getOrders } from '@/repositories/ordersRepository';
+import { getRequestPassword, isValidAdminPassword, unauthorizedResponse } from '@/lib/auth';
+
+export async function GET(request) {
+  if (!isValidAdminPassword(getRequestPassword(request))) {
+    return unauthorizedResponse();
+  }
+
+  try {
+    const orders = await getOrders();
+    return NextResponse.json({ orders });
+  } catch (error) {
+    return NextResponse.json(
+      { message: 'Não foi possível carregar os pedidos.' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request) {
   try {
@@ -55,3 +72,4 @@ export async function POST(request) {
     );
   }
 }
+

@@ -14,6 +14,7 @@ export default function Header() {
         </Link>
         <nav className="main-nav" aria-label="Navegação principal">
           <Link href="/produtos">Produtos</Link>
+          <Link href="/meus-pedidos">Meus Pedidos</Link>
           <Link href="/admin/produtos">Admin</Link>
           
           {/* O botão dinâmico entra aqui */}

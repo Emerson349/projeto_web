@@ -93,3 +93,34 @@ export async function getOrders() {
   );
   return rows.map(normalizeOrder);
 }
+
+export async function updateOrderStatus(id, status) {
+  await query(
+    `UPDATE orders SET status = ? WHERE id = ?`,
+    [status, id]
+  );
+  return getOrderById(id);
+}
+
+export async function getOrdersByEmail(email) {
+  const rows = await query(
+    `SELECT * FROM orders WHERE customer_email = ? ORDER BY created_at DESC`,
+    [email.trim().toLowerCase()]
+  );
+  
+  const orders = rows.map(normalizeOrder);
+  return Promise.all(orders.map(async (order) => {
+    const items = await query(
+      `SELECT * FROM order_items WHERE order_id = ?`,
+      [order.id]
+    );
+    return {
+      ...order,
+      items: items.map(item => ({
+        ...item,
+        price: Number(item.price),
+      })),
+    };
+  }));
+}
+

@@ -1,0 +1,176 @@
+'use client';
+
+import { useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+
+function formatPrice(value) {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value || 0);
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+}
+
+const STATUS_LABELS = {
+  pendente: { label: 'Aguardando Pagamento', class: 'status-pendente', icon: '⏳' },
+  pago: { label: 'Pagamento Confirmado', class: 'status-pago', icon: '✅' },
+  enviado: { label: 'Pedido Enviado', class: 'status-enviado', icon: '🚚' },
+  entregue: { label: 'Entregue', class: 'status-entregue', icon: '🎉' },
+  cancelado: { label: 'Cancelado', class: 'status-cancelado', icon: '❌' },
+};
+
+export default function MeusPedidosPage() {
+  const [email, setEmail] = useState('');
+  const [orders, setOrders] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [searchedEmail, setSearchedEmail] = useState('');
+
+  async function handleSearch(e) {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setError('');
+    setIsLoading(true);
+    setSearchedEmail(email.trim());
+
+    try {
+      const response = await fetch(`/api/orders/customer?email=${encodeURIComponent(email.trim())}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro ao buscar pedidos.');
+      }
+
+      setOrders(data.orders || []);
+    } catch (err) {
+      setError(err.message);
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <section className="page-section">
+      <div className="container" style={{ maxWidth: '840px', margin: '0 auto' }}>
+        <div className="page-header">
+          <h1 className="page-title">Meus Pedidos</h1>
+          <p className="page-description">
+            Informe o e-mail utilizado na compra para consultar o histórico e o status dos seus pedidos.
+          </p>
+        </div>
+
+        {/* Formulário de Busca */}
+        <form onSubmit={handleSearch} className="customer-order-search-form">
+          <div className="form-row" style={{ flex: 1 }}>
+            <label htmlFor="customerEmail">Seu E-mail</label>
+            <input
+              id="customerEmail"
+              type="email"
+              placeholder="Ex: joao@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <button className="button" type="submit" disabled={isLoading} style={{ alignSelf: 'flex-end' }}>
+            {isLoading ? 'Buscando...' : 'Buscar Pedidos'}
+          </button>
+        </form>
+
+        {error ? <p className="error-message" style={{ marginTop: '16px' }}>{error}</p> : null}
+
+        {/* Lista de Pedidos */}
+        {orders !== null && (
+          <div style={{ marginTop: '32px' }}>
+            {orders.length === 0 ? (
+              <div className="empty-state" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                <p style={{ fontSize: '1.1rem' }}>Nenhum pedido encontrado para <strong>{searchedEmail}</strong>.</p>
+                <p style={{ color: 'var(--color-muted)', marginTop: '8px' }}>Verifique se o e-mail foi digitado corretamente.</p>
+              </div>
+            ) : (
+              <div>
+                <p style={{ marginBottom: '16px', color: 'var(--color-muted)' }}>
+                  Exibindo {orders.length} {orders.length === 1 ? 'pedido' : 'pedidos'} para <strong>{searchedEmail}</strong>:
+                </p>
+
+                <div style={{ display: 'grid', gap: '20px' }}>
+                  {orders.map((order) => {
+                    const statusInfo = STATUS_LABELS[order.status] || { label: order.status, class: '', icon: '📦' };
+
+                    return (
+                      <div key={order.id} className="customer-order-card">
+                        <div className="customer-order-header">
+                          <div>
+                            <span className="customer-order-number">Pedido #{order.id}</span>
+                            <span className="customer-order-date">Realizado em {formatDate(order.created_at)}</span>
+                          </div>
+                          <span className={`order-status-badge ${statusInfo.class}`}>
+                            {statusInfo.icon} {statusInfo.label}
+                          </span>
+                        </div>
+
+                        {/* Informações de Envio / Pagamento */}
+                        <div className="customer-order-meta">
+                          <span><strong>Forma de Envio:</strong> {order.shipping_method === 'retirada' ? 'Retirada na Editora' : 'Correios'}</span>
+                          <span><strong>Pagamento:</strong> {order.payment_method.toUpperCase()}</span>
+                          <span><strong>Destinatário:</strong> {order.customer_name} ({order.shipping_city}/{order.shipping_state})</span>
+                        </div>
+
+                        {/* Lista de Itens */}
+                        <div className="customer-order-items">
+                          {order.items?.map((item) => (
+                            <div key={item.id} className="customer-order-item">
+                              <div>
+                                <strong style={{ fontSize: '0.95rem' }}>{item.title}</strong>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--color-muted)' }}>
+                                  {item.quantity}× {formatPrice(item.price)}
+                                </div>
+                              </div>
+                              <strong style={{ fontSize: '0.95rem' }}>{formatPrice(item.price * item.quantity)}</strong>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Footer do Card */}
+                        <div className="customer-order-footer">
+                          <div>
+                            {order.shipping_cost > 0 ? (
+                              <span style={{ fontSize: '0.85rem', color: 'var(--color-muted)' }}>
+                                Frete: {formatPrice(order.shipping_cost)} | Subtotal: {formatPrice(order.subtotal)}
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>
+                                Frete Grátis
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+                            Total: {formatPrice(order.total)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

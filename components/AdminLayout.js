@@ -34,6 +34,7 @@ export default function AdminLayout({ children }) {
             <nav>
               <Link href="/admin/produtos">Produtos</Link>
               <Link href="/admin/produtos/novo">Novo produto</Link>
+              <Link href="/admin/pedidos">Pedidos</Link>
             </nav>
             <button className="button secondary" type="button" onClick={logout}>
               Sair
