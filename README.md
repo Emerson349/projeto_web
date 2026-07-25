@@ -11,6 +11,7 @@ Loja virtual acadêmica para a COMPIA Editora, especializada em livros físicos 
 - API Routes
 - MySQL com `mysql2`
 - Deploy único na Vercel
+-Carrinho de compras e finalização de compra
 
 ## Funcionalidades desta fase
 
