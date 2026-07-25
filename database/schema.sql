@@ -49,3 +49,39 @@ CREATE TABLE IF NOT EXISTS product_tags (
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
+
+-- Criação da tabela de Pedidos
+CREATE TABLE IF NOT EXISTS orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_name VARCHAR(255) NOT NULL,
+    customer_email VARCHAR(255) NOT NULL,
+    customer_phone VARCHAR(20) NOT NULL,
+    customer_cpf VARCHAR(14) NOT NULL,
+    shipping_cep VARCHAR(10) NOT NULL,
+    shipping_address VARCHAR(500) NOT NULL,
+    shipping_number VARCHAR(20) NOT NULL,
+    shipping_complement VARCHAR(255),
+    shipping_neighborhood VARCHAR(255) NOT NULL,
+    shipping_city VARCHAR(255) NOT NULL,
+    shipping_state VARCHAR(2) NOT NULL,
+    shipping_method ENUM('correios', 'retirada') NOT NULL DEFAULT 'correios',
+    shipping_cost DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    payment_method ENUM('pix', 'cartao') NOT NULL DEFAULT 'pix',
+    subtotal DECIMAL(10, 2) NOT NULL,
+    total DECIMAL(10, 2) NOT NULL,
+    status ENUM('pendente', 'pago', 'enviado', 'entregue', 'cancelado') NOT NULL DEFAULT 'pendente',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Criação da tabela de Itens do Pedido
+CREATE TABLE IF NOT EXISTS order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+);

@@ -180,7 +180,7 @@ export default function CartPage() {
                   textAlign: 'center'
                 }}
               >
-                Finalizar Compra [cite: 32]
+                Finalizar Compra
               </Link>
             </div>
           </>
