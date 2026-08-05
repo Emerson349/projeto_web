@@ -42,7 +42,8 @@ export default function AdminProductsPage() {
     });
 
     if (!response.ok) {
-      setError('Não foi possível excluir o produto.');
+      const data = await response.json();
+      setError(data.message || 'Não foi possível excluir o produto.');
       return;
     }
 

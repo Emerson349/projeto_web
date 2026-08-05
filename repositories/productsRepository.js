@@ -2,6 +2,19 @@ import { getPool, query } from '@/lib/db';
 import { getCategoriesByProductId } from '@/repositories/categoriesRepository';
 import { getTagsByProductId } from '@/repositories/tagsRepository';
 
+function normalizeFormat(format) {
+  if (!format) return 'fisico';
+
+  const normalized = String(format).toLowerCase().trim();
+  if (normalized === 'digital' || normalized === 'ebook') {
+    return 'digital';
+  }
+  if (normalized === 'fisico' || normalized === 'physical') {
+    return 'fisico';
+  }
+  return 'fisico';
+}
+
 function normalizeProduct(row) {
   if (!row) {
     return null;
@@ -9,6 +22,7 @@ function normalizeProduct(row) {
 
   return {
     ...row,
+    format: normalizeFormat(row.format),
     price: Number(row.price),
     is_featured: Boolean(row.is_featured)
   };
@@ -74,6 +88,7 @@ export async function getProducts(filters = {}) {
         p.format,
         p.price,
         p.cover_url,
+        p.ebook_file,
         p.isbn,
         p.publication_year,
         p.pages,
@@ -95,7 +110,7 @@ export async function getProducts(filters = {}) {
 
 export async function getFeaturedProducts() {
   const rows = await query(`
-    SELECT id, title, slug, author, description, format, price, cover_url, is_featured
+    SELECT id, title, slug, author, description, format, price, cover_url, ebook_file, is_featured
     FROM products
     WHERE is_featured = TRUE
     ORDER BY created_at DESC
@@ -109,6 +124,7 @@ export async function getProductById(id) {
   const rows = await query(
     `
       SELECT id, title, slug, author, description, format, price, cover_url,
+        ebook_file,
         isbn, publication_year, pages, is_featured, created_at, updated_at
       FROM products
       WHERE id = ?
@@ -124,6 +140,7 @@ export async function getProductBySlug(slug) {
   const rows = await query(
     `
       SELECT id, title, slug, author, description, format, price, cover_url,
+        ebook_file,
         isbn, publication_year, pages, is_featured, created_at, updated_at
       FROM products
       WHERE slug = ?
@@ -136,28 +153,46 @@ export async function getProductBySlug(slug) {
 }
 
 export async function createProduct(data) {
+  console.log("========== CREATE PRODUCT ==========");
+  console.log("FORMAT NO REPOSITORY:", data.format);
+  console.log("DADOS RECEBIDOS:");
+  console.log(data);
+
   const connection = await getPool().getConnection();
   const slug = data.slug || createSlug(data.title);
 
   try {
     await connection.beginTransaction();
 
+    const normalizedFormat = normalizeFormat(data.format);
+
     const [result] = await connection.execute(
       `
         INSERT INTO products (
-          title, slug, author, description, format, price, cover_url,
-          isbn, publication_year, pages, is_featured
+          title,
+          slug,
+          author,
+          description,
+          format,
+          price,
+          cover_url,
+          ebook_file,
+          isbn,
+          publication_year,
+          pages,
+          is_featured
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         data.title,
         slug,
         data.author,
         data.description,
-        data.format,
+        normalizedFormat,
         data.price,
         data.cover_url || null,
+        data.ebook_file || null,
         data.isbn || null,
         data.publication_year || null,
         data.pages || null,
@@ -165,11 +200,22 @@ export async function createProduct(data) {
       ]
     );
 
-    await syncProductRelations(connection, result.insertId, data.category_ids, data.tag_ids);
+    await syncProductRelations(
+      connection,
+      result.insertId,
+      data.category_ids,
+      data.tag_ids
+    );
+
     await connection.commit();
+
+    console.log("PRODUTO CRIADO COM ID:", result.insertId);
 
     return getProductById(result.insertId);
   } catch (error) {
+    console.error("ERRO AO INSERIR PRODUTO:");
+    console.error(error);
+
     await connection.rollback();
     throw error;
   } finally {
@@ -184,11 +230,13 @@ export async function updateProduct(id, data) {
   try {
     await connection.beginTransaction();
 
+    const normalizedFormat = normalizeFormat(data.format);
+
     await connection.execute(
       `
         UPDATE products
         SET title = ?, slug = ?, author = ?, description = ?, format = ?,
-          price = ?, cover_url = ?, isbn = ?, publication_year = ?,
+          price = ?, cover_url = ?, ebook_file = ?, isbn = ?, publication_year = ?,
           pages = ?, is_featured = ?
         WHERE id = ?
       `,
@@ -197,9 +245,10 @@ export async function updateProduct(id, data) {
         slug,
         data.author,
         data.description,
-        data.format,
+        normalizedFormat,
         data.price,
         data.cover_url || null,
+        data.ebook_file || null,
         data.isbn || null,
         data.publication_year || null,
         data.pages || null,

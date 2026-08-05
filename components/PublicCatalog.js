@@ -40,7 +40,7 @@ export default function PublicCatalog({ products, categories }) {
           <select value={format} onChange={(event) => setFormat(event.target.value)}>
             <option value="">Todos</option>
             <option value="fisico">Livro físico</option>
-            <option value="ebook">E-book</option>
+            <option value="digital">E-book</option>
           </select>
         </label>
       </aside>

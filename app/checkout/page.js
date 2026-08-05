@@ -71,6 +71,7 @@ export default function CheckoutPage() {
     customer_email: '',
     customer_phone: '',
     customer_cpf: '',
+    shipping_type: 'entrega',
     shipping_cep: '',
     shipping_address: '',
     shipping_number: '',
@@ -96,18 +97,45 @@ export default function CheckoutPage() {
 
     const digits = rawValue.replace(/\D/g, '');
     if (digits.length === 8) {
-      const info = calcularFrete(digits);
-      setFreteInfo(info);
+      // Chama API server-side que consulta Correios para cálculo real de frete
+      (async () => {
+        try {
+          const res = await fetch('/api/shipping/correios', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cep: digits, items: cart.map(i => ({ quantity: i.quantity })) })
+          });
+          const data = await res.json();
+          if (res.ok && data.chosen) {
+            setFreteInfo({ cost: data.chosen.cost, method: 'correios', label: `${data.chosen.label} — Prazo ${data.chosen.prazo} dias` });
+          } else {
+            // fallback local
+            setFreteInfo(calcularFrete(digits));
+          }
+        } catch (err) {
+          setFreteInfo(calcularFrete(digits));
+        }
+      })();
     } else {
       setFreteInfo(null);
     }
   }
 
-  const shippingCost = freteInfo?.cost ?? 0;
-  const shippingMethod = freteInfo?.method ?? 'correios';
-  const grandTotal = totalPrice + shippingCost;
-
   const hasPhysical = cart.some(item => item.format !== 'digital' && item.format !== 'ebook');
+
+  const shippingCost = hasPhysical
+    ? form.shipping_type === 'retirada'
+      ? 0
+      : (freteInfo?.cost ?? 0)
+    : 0;
+
+  const shippingMethod = hasPhysical
+    ? form.shipping_type === 'retirada'
+      ? 'retirada'
+      : (freteInfo?.method ?? 'correios')
+    : 'digital';
+
+  const grandTotal = totalPrice + shippingCost;
 
   function validateStep1() {
     if (!form.customer_name.trim()) return 'Informe seu nome completo.';
@@ -118,12 +146,15 @@ export default function CheckoutPage() {
   }
 
   function validateStep2() {
-    if (form.shipping_cep.replace(/\D/g, '').length !== 8) return 'Informe um CEP válido.';
-    if (!form.shipping_address.trim()) return 'Informe o endereço.';
-    if (!form.shipping_number.trim()) return 'Informe o número.';
-    if (!form.shipping_neighborhood.trim()) return 'Informe o bairro.';
-    if (!form.shipping_city.trim()) return 'Informe a cidade.';
-    if (!form.shipping_state) return 'Selecione o estado.';
+    if (!hasPhysical) return '';
+    if (form.shipping_type === 'entrega') {
+      if (form.shipping_cep.replace(/\D/g, '').length !== 8) return 'Informe um CEP válido.';
+      if (!form.shipping_address.trim()) return 'Informe o endereço.';
+      if (!form.shipping_number.trim()) return 'Informe o número.';
+      if (!form.shipping_neighborhood.trim()) return 'Informe o bairro.';
+      if (!form.shipping_city.trim()) return 'Informe a cidade.';
+      if (!form.shipping_state) return 'Selecione o estado.';
+    }
     return '';
   }
 
@@ -132,8 +163,13 @@ export default function CheckoutPage() {
     if (step === 1) {
       const err = validateStep1();
       if (err) { setError(err); return; }
-      setStep(2);
+      setStep(hasPhysical ? 2 : 3);
     } else if (step === 2) {
+      if (!hasPhysical) {
+        setStep(3);
+        return;
+      }
+
       const err = validateStep2();
       if (err) { setError(err); return; }
       setStep(3);
@@ -154,7 +190,10 @@ export default function CheckoutPage() {
         title: item.title || item.name,
         price: item.price,
         quantity: item.quantity,
+        format: item.format,
+        ebook_file: item.ebook_file || null
       })),
+
     };
 
     try {
@@ -219,11 +258,11 @@ export default function CheckoutPage() {
               onClick={() => {
                 const err = validateStep1();
                 if (err) { setError(err); return; }
-                setError(''); setStep(2);
+                setError(''); setStep(hasPhysical ? 2 : 3);
               }}
             >
               <span className="step-number">2</span>
-              <span className="step-label">Endereço</span>
+              <span className="step-label">{hasPhysical ? 'Entrega / Retirada' : 'Entrega Digital'}</span>
             </button>
             <div className="step-divider" />
             <button
@@ -232,8 +271,10 @@ export default function CheckoutPage() {
               onClick={() => {
                 const err1 = validateStep1();
                 if (err1) { setError(err1); setStep(1); return; }
-                const err2 = validateStep2();
-                if (err2) { setError(err2); setStep(2); return; }
+                if (hasPhysical) {
+                  const err2 = validateStep2();
+                  if (err2) { setError(err2); setStep(2); return; }
+                }
                 setError(''); setStep(3);
               }}
             >
@@ -294,104 +335,153 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <button type="button" className="button" onClick={handleNextStep}>
-                    Continuar para Endereço →
+                    Continuar para {hasPhysical ? 'Endereço' : 'Pagamento'} →
                   </button>
                 </div>
               </div>
             )}
 
-            {/* ETAPA 2 — Endereço */}
+            {/* ETAPA 2 — Entrega */}
             {step === 2 && (
               <div className="checkout-section">
-                <h2 className="checkout-section-title">📍 Endereço de Entrega</h2>
+                <h2 className="checkout-section-title">📦 Entrega ou Retirada</h2>
                 <div className="form-grid">
-                  <div className="form-columns">
-                    <div className="form-row">
-                      <label htmlFor="shipping_cep">CEP</label>
-                      <input
-                        id="shipping_cep"
-                        value={form.shipping_cep}
-                        onChange={e => handleCepChange(e.target.value)}
-                        placeholder="58000-000"
-                        required
-                      />
-                      {freteInfo && (
-                        <p className="frete-feedback">
-                          {freteInfo.cost === 0
-                            ? '✅ ' + freteInfo.label
-                            : `🚚 ${freteInfo.label} — ${formatPrice(freteInfo.cost)}`
-                          }
-                        </p>
+                  {hasPhysical ? (
+                    <>
+                      <div className="form-row">
+                        <label>Como você quer receber o pedido?</label>
+                        <div className="shipping-options">
+                          <label className={`shipping-option ${form.shipping_type === 'entrega' ? 'selected' : ''}`}>
+                            <input
+                              type="radio"
+                              name="shipping_type"
+                              value="entrega"
+                              checked={form.shipping_type === 'entrega'}
+                              onChange={e => updateField('shipping_type', e.target.value)}
+                            />
+                            <strong>Entrega pelos Correios</strong>
+                            <p>Informe seu endereço e o frete será calculado automaticamente.</p>
+                          </label>
+
+                          <label className={`shipping-option ${form.shipping_type === 'retirada' ? 'selected' : ''}`}>
+                            <input
+                              type="radio"
+                              name="shipping_type"
+                              value="retirada"
+                              checked={form.shipping_type === 'retirada'}
+                              onChange={e => updateField('shipping_type', e.target.value)}
+                            />
+                            <strong>Retirada na Editora</strong>
+                            <p>Sem frete. Retire em Campina Grande/PB.</p>
+                          </label>
+                        </div>
+                      </div>
+
+                      {form.shipping_type === 'entrega' ? (
+                        <>
+                          <div className="form-columns">
+                            <div className="form-row">
+                              <label htmlFor="shipping_cep">CEP</label>
+                              <input
+                                id="shipping_cep"
+                                value={form.shipping_cep}
+                                onChange={e => handleCepChange(e.target.value)}
+                                placeholder="58000-000"
+                                required
+                              />
+                              {freteInfo && (
+                                <p className="frete-feedback">
+                                  {freteInfo.cost === 0
+                                    ? '✅ ' + freteInfo.label
+                                    : `🚚 ${freteInfo.label} — ${formatPrice(freteInfo.cost)}`
+                                  }
+                                </p>
+                              )}
+                            </div>
+                            <div className="form-row">
+                              <label htmlFor="shipping_state">Estado</label>
+                              <select
+                                id="shipping_state"
+                                value={form.shipping_state}
+                                onChange={e => updateField('shipping_state', e.target.value)}
+                                required
+                              >
+                                <option value="">Selecione</option>
+                                {ESTADOS_BR.map(uf => (
+                                  <option key={uf} value={uf}>{uf}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <label htmlFor="shipping_address">Endereço</label>
+                            <input
+                              id="shipping_address"
+                              value={form.shipping_address}
+                              onChange={e => updateField('shipping_address', e.target.value)}
+                              placeholder="Rua, Avenida..."
+                              required
+                            />
+                          </div>
+                          <div className="form-columns">
+                            <div className="form-row">
+                              <label htmlFor="shipping_number">Número</label>
+                              <input
+                                id="shipping_number"
+                                value={form.shipping_number}
+                                onChange={e => updateField('shipping_number', e.target.value)}
+                                placeholder="123"
+                                required
+                              />
+                            </div>
+                            <div className="form-row">
+                              <label htmlFor="shipping_complement">Complemento</label>
+                              <input
+                                id="shipping_complement"
+                                value={form.shipping_complement}
+                                onChange={e => updateField('shipping_complement', e.target.value)}
+                                placeholder="Apto, Bloco..."
+                              />
+                            </div>
+                          </div>
+                          <div className="form-columns">
+                            <div className="form-row">
+                              <label htmlFor="shipping_neighborhood">Bairro</label>
+                              <input
+                                id="shipping_neighborhood"
+                                value={form.shipping_neighborhood}
+                                onChange={e => updateField('shipping_neighborhood', e.target.value)}
+                                placeholder="Centro"
+                                required
+                              />
+                            </div>
+                            <div className="form-row">
+                              <label htmlFor="shipping_city">Cidade</label>
+                              <input
+                                id="shipping_city"
+                                value={form.shipping_city}
+                                onChange={e => updateField('shipping_city', e.target.value)}
+                                placeholder="Campina Grande"
+                                required
+                              />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="shipping-tip">
+                          <p>Você escolheu retirar o pedido na sede da Editora.</p>
+                          <p>Não é necessário informar endereço ou CEP.</p>
+                          <p>Endereço para retirada: Campina Grande/PB.</p>
+                        </div>
                       )}
+                    </>
+                  ) : (
+                    <div className="shipping-tip">
+                      <p>Seu pedido é totalmente digital. Nenhum dado de entrega é necessário.</p>
+                      <p>O e-book será enviado para seu e-mail após o pagamento.</p>
                     </div>
-                    <div className="form-row">
-                      <label htmlFor="shipping_state">Estado</label>
-                      <select
-                        id="shipping_state"
-                        value={form.shipping_state}
-                        onChange={e => updateField('shipping_state', e.target.value)}
-                        required
-                      >
-                        <option value="">Selecione</option>
-                        {ESTADOS_BR.map(uf => (
-                          <option key={uf} value={uf}>{uf}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <label htmlFor="shipping_address">Endereço</label>
-                    <input
-                      id="shipping_address"
-                      value={form.shipping_address}
-                      onChange={e => updateField('shipping_address', e.target.value)}
-                      placeholder="Rua, Avenida..."
-                      required
-                    />
-                  </div>
-                  <div className="form-columns">
-                    <div className="form-row">
-                      <label htmlFor="shipping_number">Número</label>
-                      <input
-                        id="shipping_number"
-                        value={form.shipping_number}
-                        onChange={e => updateField('shipping_number', e.target.value)}
-                        placeholder="123"
-                        required
-                      />
-                    </div>
-                    <div className="form-row">
-                      <label htmlFor="shipping_complement">Complemento</label>
-                      <input
-                        id="shipping_complement"
-                        value={form.shipping_complement}
-                        onChange={e => updateField('shipping_complement', e.target.value)}
-                        placeholder="Apto, Bloco..."
-                      />
-                    </div>
-                  </div>
-                  <div className="form-columns">
-                    <div className="form-row">
-                      <label htmlFor="shipping_neighborhood">Bairro</label>
-                      <input
-                        id="shipping_neighborhood"
-                        value={form.shipping_neighborhood}
-                        onChange={e => updateField('shipping_neighborhood', e.target.value)}
-                        placeholder="Centro"
-                        required
-                      />
-                    </div>
-                    <div className="form-row">
-                      <label htmlFor="shipping_city">Cidade</label>
-                      <input
-                        id="shipping_city"
-                        value={form.shipping_city}
-                        onChange={e => updateField('shipping_city', e.target.value)}
-                        placeholder="Campina Grande"
-                        required
-                      />
-                    </div>
-                  </div>
+                  )}
+
                   <div className="checkout-nav-buttons">
                     <button type="button" className="button secondary" onClick={() => setStep(1)}>
                       ← Voltar
@@ -408,7 +498,23 @@ export default function CheckoutPage() {
             {step === 3 && (
               <div className="checkout-section">
                 <h2 className="checkout-section-title">💳 Forma de Pagamento</h2>
+                <p style={{ marginBottom: '16px', fontWeight: 600 }}>
+                  Método selecionado: {
+                    form.payment_method === 'pix' ? 'PIX'
+                    : form.payment_method === 'cartao' ? 'Cartão de Crédito'
+                    : form.payment_method === 'teste' ? 'Pagamento Rápido'
+                    : 'Outro'
+                  }
+                </p>
                 <div className="payment-options">
+                  <p style={{ marginBottom: '16px', fontWeight: '600' }}>
+                    Método selecionado: {
+                      form.payment_method === 'pix' ? 'PIX'
+                      : form.payment_method === 'cartao' ? 'Cartão de Crédito'
+                      : form.payment_method === 'teste' ? 'Pagamento Rápido'
+                      : 'Outro'
+                    }
+                  </p>
                   <label
                     className={`payment-option ${form.payment_method === 'pix' ? 'selected' : ''}`}
                   >
@@ -443,6 +549,25 @@ export default function CheckoutPage() {
                       <div>
                         <strong>Cartão de Crédito</strong>
                         <p>Visa, MasterCard, Elo e outras bandeiras. Parcele em até 3x sem juros.</p>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`payment-option ${form.payment_method === 'teste' ? 'selected' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment_method"
+                      value="teste"
+                      checked={form.payment_method === 'teste'}
+                      onChange={e => updateField('payment_method', e.target.value)}
+                    />
+                    <div className="payment-option-content">
+                      <span className="payment-icon">⚡</span>
+                      <div>
+                        <strong>Pagamento Rápido</strong>
+                        <p>Teste rápido sem PIX ou cartão. Pedido aprovado instantaneamente.</p>
                       </div>
                     </div>
                   </label>
@@ -597,10 +722,11 @@ export default function CheckoutPage() {
             <div className="checkout-summary-row">
               <span>Frete</span>
               <span>
-                {freteInfo
-                  ? (freteInfo.cost === 0 ? 'Grátis' : formatPrice(freteInfo.cost))
-                  : 'Calcular no passo 2'
-                }
+                {hasPhysical ? (
+                  form.shipping_type === 'retirada' ? 'Grátis (Retirada)' : (
+                    freteInfo ? (freteInfo.cost === 0 ? 'Grátis' : formatPrice(freteInfo.cost)) : 'Calcular no passo 2'
+                  )
+                ) : 'Grátis (Digital)'}
               </span>
             </div>
             <div className="checkout-summary-row checkout-summary-total">

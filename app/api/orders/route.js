@@ -22,15 +22,19 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
+    // Permite o modo de teste no front-end. O banco usa ENUM('pix','cartao'),
+    // então mapeamos 'teste' para 'pix' para evitar erro de truncamento.
+    if (body.payment_method === 'teste') {
+      body.payment_method = 'pix';
+    }
+
     // Validação básica
-    const required = [
+    const baseRequired = [
       'customer_name', 'customer_email', 'customer_phone', 'customer_cpf',
-      'shipping_cep', 'shipping_address', 'shipping_number',
-      'shipping_neighborhood', 'shipping_city', 'shipping_state',
-      'shipping_method', 'payment_method', 'items'
+      'payment_method', 'items'
     ];
 
-    for (const field of required) {
+    for (const field of baseRequired) {
       if (!body[field]) {
         return NextResponse.json(
           { message: `Campo obrigatório ausente: ${field}` },
@@ -44,6 +48,44 @@ export async function POST(request) {
         { message: 'O pedido precisa ter pelo menos um item.' },
         { status: 400 }
       );
+    }
+
+    // Se todos os itens forem digitais, não exigimos dados de frete
+    const hasPhysical = body.items.some(
+      (item) => item.format && item.format !== 'digital' && item.format !== 'ebook'
+    );
+
+    if (hasPhysical) {
+      if (!['entrega', 'retirada'].includes(body.shipping_type)) {
+        return NextResponse.json(
+          { message: 'Tipo de envio inválido. Escolha entrega ou retirada.' },
+          { status: 400 }
+        );
+      }
+
+      if (body.shipping_type === 'entrega') {
+        const shippingRequired = [
+          'shipping_cep', 'shipping_address', 'shipping_number',
+          'shipping_neighborhood', 'shipping_city', 'shipping_state', 'shipping_method'
+        ];
+
+        for (const field of shippingRequired) {
+          if (!body[field]) {
+            return NextResponse.json(
+              { message: `Campo obrigatório de frete ausente: ${field}` },
+              { status: 400 }
+            );
+          }
+        }
+      } else {
+        body.shipping_method = 'retirada';
+        body.shipping_cost = 0;
+      }
+    } else {
+      // Padroniza pedido digital
+      body.shipping_method = 'digital';
+      body.shipping_cost = 0;
+      body.shipping_type = 'digital';
     }
 
     // Calcula totais
