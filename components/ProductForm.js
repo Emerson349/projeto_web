@@ -129,8 +129,8 @@ export default function ProductForm({ product, categories, tags, onSubmit, submi
             value={form.format}
             onChange={(event) => updateField('format', event.target.value)}
           >
-            <option value="fisico">Livro físico</option>
-            <option value="ebook">E-book</option>
+            <option value="physical">Livro físico</option>
+            <option value="digital">E-book</option>
           </select>
         </div>
 
