@@ -287,7 +287,10 @@ button {
 }
 
 .footer-inner {
-  align-items: flex-start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   flex-direction: column;
   gap: 6px;
 }
@@ -1602,4 +1605,12 @@ button {
 html {
   scrollbar-width: thin;
   scrollbar-color: rgba(21, 94, 99, 0.25) var(--color-bg);
+}
+
+/* Ocultar logotipo e indicador de desenvolvimento do Next.js */
+nextjs-portal,
+[data-nextjs-toast],
+[data-nextjs-dialog-overlay],
+#next-logo-container {
+  display: none !important;
 }

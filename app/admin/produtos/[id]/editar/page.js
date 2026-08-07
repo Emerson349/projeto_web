@@ -1,11 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import ProductForm from '@/components/ProductForm';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
 export default function EditProductPage({ params }) {
+  const { id } = use(params);
   const router = useRouter();
   const { adminPassword, isAuthenticated } = useAdminAuth();
   const [product, setProduct] = useState(null);
@@ -22,7 +23,7 @@ export default function EditProductPage({ params }) {
     async function loadData() {
       setIsLoading(true);
       const [productResponse, categoriesResponse, tagsResponse] = await Promise.all([
-        fetch(`/api/products/${params.id}`),
+        fetch(`/api/products/${id}`),
         fetch('/api/categories'),
         fetch('/api/tags')
       ]);
@@ -37,16 +38,16 @@ export default function EditProductPage({ params }) {
       const categoriesData = await categoriesResponse.json();
       const tagsData = await tagsResponse.json();
       setProduct(productData.product);
-      setCategories(categoriesData.categories);
-      setTags(tagsData.tags);
+      setCategories(categoriesData.categories || []);
+      setTags(tagsData.tags || []);
       setIsLoading(false);
     }
 
     loadData();
-  }, [isAuthenticated, params.id]);
+  }, [isAuthenticated, id]);
 
   async function updateProduct(payload) {
-    const response = await fetch(`/api/products/${params.id}`, {
+    const response = await fetch(`/api/products/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

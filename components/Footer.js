@@ -1,9 +1,8 @@
 export default function Footer() {
   return (
     <footer className="site-footer">
-      <div className="container footer-inner">
+      <div className="container footer-inner" style={{ textAlign: 'center' }}>
         <p>COMPIA Editora - livros físicos e e-books sobre Inteligência Artificial.</p>
-        <p>Projeto acadêmico preparado para Next.js, Vercel e MySQL.</p>
       </div>
     </footer>
   );

@@ -270,8 +270,24 @@ export async function updateProduct(id, data) {
 }
 
 export async function deleteProduct(id) {
-  const result = await query('DELETE FROM products WHERE id = ?', [id]);
-  return result.affectedRows > 0;
+  const connection = await getPool().getConnection();
+  try {
+    await connection.beginTransaction();
+
+    await connection.execute('DELETE FROM product_categories WHERE product_id = ?', [id]);
+    await connection.execute('DELETE FROM product_tags WHERE product_id = ?', [id]);
+    await connection.execute('DELETE FROM order_items WHERE product_id = ?', [id]);
+
+    const [result] = await connection.execute('DELETE FROM products WHERE id = ?', [id]);
+
+    await connection.commit();
+    return result.affectedRows > 0;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 async function syncProductRelations(connection, productId, categoryIds = [], tagIds = []) {
