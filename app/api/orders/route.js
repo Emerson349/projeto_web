@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createOrder, getOrders } from '@/repositories/ordersRepository';
-import { getRequestPassword, isValidAdminPassword, unauthorizedResponse } from '@/lib/auth';
+import { getRequestPassword, isValidAdminPassword, unauthorizedResponse, authorizeApiRequest } from '@/lib/auth';
 
 export async function GET(request) {
-  if (!isValidAdminPassword(getRequestPassword(request))) {
-    return unauthorizedResponse();
+  const auth = await authorizeApiRequest(request, ['admin', 'editor', 'vendedor']);
+  const reqPass = getRequestPassword(request);
+  if (!auth.authorized && !isValidAdminPassword(reqPass)) {
+    return unauthorizedResponse(auth.message, auth.status);
   }
 
   try {

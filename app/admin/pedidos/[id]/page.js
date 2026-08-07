@@ -33,13 +33,15 @@ const STATUS_LABELS = {
 
 export default function AdminOrderDetailPage({ params }) {
   const { id } = use(params);
-  const { adminPassword, isAuthenticated } = useAdminAuth();
+  const { adminPassword, isAuthenticated, hasRole } = useAdminAuth();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [newStatus, setNewStatus] = useState('');
+
+  const canManageOrderStatus = hasRole(['admin', 'vendedor']);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -63,6 +65,8 @@ export default function AdminOrderDetailPage({ params }) {
 
   async function handleStatusUpdate(e) {
     e.preventDefault();
+    if (!canManageOrderStatus) return;
+
     setError('');
     setSuccessMessage('');
     setIsUpdating(true);
@@ -115,32 +119,38 @@ export default function AdminOrderDetailPage({ params }) {
       {error ? <p className="error-message">{error}</p> : null}
       {successMessage ? <p className="success-message">{successMessage}</p> : null}
 
-      {/* Alterar Status */}
-      <form onSubmit={handleStatusUpdate} className="admin-status-form">
-        <label htmlFor="statusSelect"><strong>Alterar Status do Pedido:</strong></label>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <select
-            id="statusSelect"
-            value={newStatus}
-            onChange={(e) => setNewStatus(e.target.value)}
-            style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)', flex: 1 }}
-          >
-            <option value="pendente">Pendente</option>
-            <option value="pago">Pago</option>
-            <option value="enviado">Enviado</option>
-            <option value="entregue">Entregue</option>
-            <option value="cancelado">Cancelado</option>
-          </select>
-          <button className="button" type="submit" disabled={isUpdating || newStatus === order.status}>
-            {isUpdating ? 'Salvando...' : 'Atualizar Status'}
-          </button>
+      {/* Form de Alteração de Status com checagem de Role */}
+      {canManageOrderStatus ? (
+        <form onSubmit={handleStatusUpdate} className="admin-status-form">
+          <label htmlFor="statusSelect"><strong>Alterar Status do Pedido:</strong></label>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <select
+              id="statusSelect"
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)', flex: 1 }}
+            >
+              <option value="pendente">Pendente</option>
+              <option value="pago">Pago</option>
+              <option value="enviado">Enviado</option>
+              <option value="entregue">Entregue</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+            <button className="button" type="submit" disabled={isUpdating || newStatus === order.status}>
+              {isUpdating ? 'Salvando...' : 'Atualizar Status'}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div style={{ padding: '0.75rem 1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', margin: '1rem 0', fontSize: '0.9rem', color: '#475569' }}>
+          <strong>Modo Leitura:</strong> Seu perfil (Editor) não possui permissão para alterar o status de pedidos.
         </div>
-      </form>
+      )}
 
       <div className="admin-order-grid">
         {/* Dados do Cliente */}
         <div className="admin-order-card">
-          <h2>👤 Dados do Cliente</h2>
+          <h2>Dados do Cliente</h2>
           <dl className="admin-order-dl">
             <dt>Nome:</dt>
             <dd>{order.customer_name}</dd>
@@ -155,7 +165,7 @@ export default function AdminOrderDetailPage({ params }) {
 
         {/* Endereço de Entrega */}
         <div className="admin-order-card">
-          <h2>📍 Entrega & Pagamento</h2>
+          <h2>Entrega & Pagamento</h2>
           <dl className="admin-order-dl">
             <dt>Forma de Envio:</dt>
             <dd style={{ textTransform: 'capitalize' }}>{order.shipping_method} ({formatPrice(order.shipping_cost)})</dd>
@@ -173,7 +183,7 @@ export default function AdminOrderDetailPage({ params }) {
 
       {/* Itens do Pedido */}
       <div className="admin-order-card" style={{ marginTop: '20px' }}>
-        <h2>📦 Itens do Pedido</h2>
+        <h2>Itens do Pedido</h2>
         <table className="admin-orders-table">
           <thead>
             <tr>

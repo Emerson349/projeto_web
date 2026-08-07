@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getOrderById, updateOrderStatus } from '@/repositories/ordersRepository';
-import { getRequestPassword, isValidAdminPassword, unauthorizedResponse } from '@/lib/auth';
+import { getRequestPassword, isValidAdminPassword, unauthorizedResponse, authorizeApiRequest } from '@/lib/auth';
 
 function getIdFromRequest(request) {
   const url = new URL(request.url);
@@ -42,6 +42,9 @@ export async function PUT(request) {
       );
     }
 
+    const auth = await authorizeApiRequest(request, ['admin', 'vendedor']);
+    const isStaff = auth.authorized || isValidAdminPassword(getRequestPassword(request));
+
     // Permitir que o cliente cancele seu pedido pendente informando o mesmo e-mail usado na compra.
     if (status === 'cancelado') {
       const orderCurrent = await getOrderById(id);
@@ -49,13 +52,12 @@ export async function PUT(request) {
         return NextResponse.json({ message: 'Pedido não encontrado.' }, { status: 404 });
       }
 
-      const adminOk = isValidAdminPassword(getRequestPassword(request));
       const customerEmail = (body.customer_email || '').trim().toLowerCase();
       const ownerEmail = (orderCurrent.customer_email || '').trim().toLowerCase();
 
-      if (!adminOk) {
+      if (!isStaff) {
         if (!customerEmail || customerEmail !== ownerEmail) {
-          return unauthorizedResponse();
+          return unauthorizedResponse('Operação não autorizada.', 401);
         }
 
         // Só permitimos cancelamento pelo cliente se o pedido ainda estiver pendente
@@ -64,9 +66,9 @@ export async function PUT(request) {
         }
       }
     } else {
-      // Se for alteração administrativa diferente de 'pago' (e não é cancelamento via cliente), exige senha admin
-      if (status !== 'pago' && !isValidAdminPassword(getRequestPassword(request))) {
-        return unauthorizedResponse();
+      // Alterações de status por membros da equipe exigem perfil admin ou vendedor (editor não pode alterar status de pedido)
+      if (status !== 'pago' && !isStaff) {
+        return unauthorizedResponse('Apenas administradores e vendedores podem alterar o status de pedidos.', 403);
       }
     }
 
