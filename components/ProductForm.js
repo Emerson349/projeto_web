@@ -10,6 +10,7 @@ const emptyProduct = {
   format: 'fisico',
   price: '',
   cover_url: '',
+  ebook_file: '',
   isbn: '',
   publication_year: '',
   pages: '',
@@ -69,6 +70,9 @@ export default function ProductForm({ product, categories, tags, onSubmit, submi
     };
 
     try {
+      console.log("PAYLOAD ENVIADO");
+      console.log(payload);
+
       await onSubmit(payload);
     } catch (submitError) {
       setError(submitError.message || 'Não foi possível salvar o produto.');
@@ -129,7 +133,7 @@ export default function ProductForm({ product, categories, tags, onSubmit, submi
             value={form.format}
             onChange={(event) => updateField('format', event.target.value)}
           >
-            <option value="physical">Livro físico</option>
+            <option value="fisico">Livro físico</option>
             <option value="digital">E-book</option>
           </select>
         </div>
@@ -157,6 +161,18 @@ export default function ProductForm({ product, categories, tags, onSubmit, submi
           onChange={(event) => updateField('cover_url', event.target.value)}
         />
       </div>
+
+      {form.format === 'digital' && (
+        <div className="form-row">
+          <label htmlFor="ebook_file">Arquivo do e-book (URL)</label>
+          <input
+            id="ebook_file"
+            type="url"
+            value={form.ebook_file || ''}
+            onChange={(event) => updateField('ebook_file', event.target.value)}
+          />
+        </div>
+      )}
 
       <div className="form-columns">
         <div className="form-row">

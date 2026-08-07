@@ -25,6 +25,10 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
+
+    console.log("BODY DA API:");
+    console.log(body);
+
     const product = await createProduct(body);
     return NextResponse.json({ product }, { status: 201 });
   } catch (error) {

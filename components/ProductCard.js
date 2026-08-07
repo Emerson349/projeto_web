@@ -15,12 +15,12 @@ export default function ProductCard({ product, adminActions }) {
         {product.cover_url ? (
           <Image src={product.cover_url} alt="" width={360} height={520} unoptimized />
         ) : (
-          <span>{product.format === 'ebook' ? 'E-book' : 'Livro'}</span>
+          <span>{product.format === 'digital' ? 'E-book' : 'Livro'}</span>
         )}
       </Link>
       <div className="product-card-body">
         <div className="product-meta">
-          <span>{product.format === 'ebook' ? 'E-book' : 'Físico'}</span>
+          <span>{product.format === 'digital' ? 'E-book' : 'Físico'}</span>
           {product.categories?.[0] ? <span>{product.categories[0].name}</span> : null}
         </div>
         <h2>

@@ -64,6 +64,28 @@ function ConfirmacaoContent() {
     }
   }, [metodo, pedidoId, orderStatus]);
 
+  // Marca pedido como pago imediatamente em modo de teste
+  useEffect(() => {
+    if (metodo === 'teste' && pedidoId && orderStatus === 'pendente') {
+      const timer = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/orders/${pedidoId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'pago' }),
+          });
+          if (res.ok) {
+            setOrderStatus('pago');
+          }
+        } catch (err) {
+          console.error('Erro ao aprovar pagamento de teste:', err);
+        }
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [metodo, pedidoId, orderStatus]);
+
   // Função para copiar chave PIX
   function handleCopyPix(pixPayload) {
     navigator.clipboard.writeText(pixPayload);
@@ -200,6 +222,19 @@ function ConfirmacaoContent() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {metodo === 'teste' && (
+            <div className="confirmation-payment-info test-info">
+              <h2>⚡ Pagamento Rápido de Teste</h2>
+              <div className="payment-approved-box">
+                <div className="approved-icon">✅</div>
+                <div>
+                  <h3>Pedido marcado como pago</h3>
+                  <p>Pagamento de teste concluído instantaneamente. Você pode usar isso para validar o fluxo.</p>
+                </div>
+              </div>
             </div>
           )}
 

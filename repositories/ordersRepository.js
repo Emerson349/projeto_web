@@ -73,8 +73,33 @@ export async function getOrderById(id) {
   const order = normalizeOrder(rows[0]);
   if (!order) return null;
 
+  /*
   const items = await query(
-    `SELECT * FROM order_items WHERE order_id = ?`,
+    `
+      SELECT
+        oi.*,
+        p.format,
+        p.ebook_file
+      FROM order_items oi
+      LEFT JOIN products p
+        ON p.id = oi.product_id
+      WHERE oi.order_id = ?
+    `,
+    [id]
+  );
+  */
+
+  const items = await query(
+    `
+      SELECT
+        oi.*,
+        p.format,
+        p.ebook_file
+      FROM order_items oi
+      LEFT JOIN products p
+        ON p.id = oi.product_id
+      WHERE oi.order_id = ?
+    `,
     [id]
   );
 
@@ -83,6 +108,8 @@ export async function getOrderById(id) {
     items: items.map(item => ({
       ...item,
       price: Number(item.price),
+      isDigital: item.format === 'digital',
+      ebook_file: item.ebook_file || null
     })),
   };
 }
@@ -111,7 +138,16 @@ export async function getOrdersByEmail(email) {
   const orders = rows.map(normalizeOrder);
   return Promise.all(orders.map(async (order) => {
     const items = await query(
-      `SELECT * FROM order_items WHERE order_id = ?`,
+      `
+        SELECT
+          oi.*,
+          p.format,
+          p.ebook_file
+        FROM order_items oi
+        LEFT JOIN products p
+          ON p.id = oi.product_id
+        WHERE oi.order_id = ?
+      `,
       [order.id]
     );
     return {
@@ -119,6 +155,8 @@ export async function getOrdersByEmail(email) {
       items: items.map(item => ({
         ...item,
         price: Number(item.price),
+        isDigital: item.format === 'digital',
+        ebook_file: item.ebook_file || null
       })),
     };
   }));

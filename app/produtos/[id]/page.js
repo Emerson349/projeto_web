@@ -42,7 +42,7 @@ export default async function ProductDetailPage({ params }) {
         </div>
         <div className="detail-content">
           <Link href="/produtos" className="back-link">Voltar ao catálogo</Link>
-          <p className="eyebrow">{product.format === 'ebook' ? 'E-book' : 'Livro físico'}</p>
+          <p className="eyebrow">{product.format === 'digital' ? 'E-book' : 'Livro físico'}</p>
           <h1 className="page-title">{product.title}</h1>
           <p className="product-author">Por {product.author}</p>
           <strong className="detail-price">{formatPrice(product.price)}</strong>
@@ -52,7 +52,9 @@ export default async function ProductDetailPage({ params }) {
               id: product.id,
               name: product.title,
               price: product.price,
-              cover_url: product.cover_url
+              cover_url: product.cover_url,
+              format: product.format,
+              ebook_file: product.ebook_file
             }}
           />
 

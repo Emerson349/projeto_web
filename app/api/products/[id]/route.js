@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { getRequestPassword, isValidAdminPassword, unauthorizedResponse } from '@/lib/auth';
 import {
   deleteProduct,
@@ -5,60 +6,78 @@ import {
   updateProduct
 } from '@/repositories/productsRepository';
 
-export async function GET(request, { params }) {
+function getIdFromRequest(request) {
+  const url = new URL(request.url);
+  const segments = url.pathname.split('/').filter(Boolean);
+  return segments[segments.length - 1];
+}
+
+export async function GET(request) {
+  const id = getIdFromRequest(request);
+
   try {
-    const product = await getProductById(params.id);
+    const product = await getProductById(id);
 
     if (!product) {
-      return Response.json({ message: 'Produto não encontrado.' }, { status: 404 });
+      return NextResponse.json({ message: 'Produto não encontrado.' }, { status: 404 });
     }
 
-    return Response.json({ product });
+    return NextResponse.json({ product });
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       { message: 'Não foi possível carregar o produto.' },
       { status: 500 }
     );
   }
 }
 
-export async function PUT(request, { params }) {
+export async function PUT(request) {
   if (!isValidAdminPassword(getRequestPassword(request))) {
     return unauthorizedResponse();
   }
 
   try {
+    const id = getIdFromRequest(request);
     const body = await request.json();
-    const product = await updateProduct(params.id, body);
+    const product = await updateProduct(id, body);
 
     if (!product) {
-      return Response.json({ message: 'Produto não encontrado.' }, { status: 404 });
+      return NextResponse.json({ message: 'Produto não encontrado.' }, { status: 404 });
     }
 
-    return Response.json({ product });
+    return NextResponse.json({ product });
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       { message: 'Não foi possível atualizar o produto.' },
       { status: 400 }
     );
   }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request) {
   if (!isValidAdminPassword(getRequestPassword(request))) {
     return unauthorizedResponse();
   }
 
   try {
-    const deleted = await deleteProduct(params.id);
+    const id = getIdFromRequest(request);
+    const deleted = await deleteProduct(id);
 
     if (!deleted) {
-      return Response.json({ message: 'Produto não encontrado.' }, { status: 404 });
+      return NextResponse.json({ message: 'Produto não encontrado.' }, { status: 404 });
     }
 
-    return Response.json({ ok: true });
+    return NextResponse.json({ ok: true });
   } catch (error) {
-    return Response.json(
+    // Erro comum: tentativa de excluir produto referenciado por `order_items`
+    if (error && (error.code === 'ER_ROW_IS_REFERENCED_2' || error.code === 'ER_ROW_IS_REFERENCED')) {
+      return NextResponse.json(
+        { message: 'Produto não pode ser excluído porque há registros relacionados (ex: pedidos).' },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
       { message: 'Não foi possível excluir o produto.' },
       { status: 500 }
     );
