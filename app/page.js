@@ -18,7 +18,6 @@ export default async function HomePage() {
       <section className="home-hero">
         <div className="container hero-grid">
           <div className="hero-copy">
-            <p className="eyebrow">COMPIA Editora</p>
             <h1>Livros acadêmicos sobre Inteligência Artificial.</h1>
             <p>
               Catálogo especializado para estudantes, docentes e pesquisadores que buscam
