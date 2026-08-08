@@ -33,7 +33,7 @@ const STATUS_LABELS = {
   pago: {
     label: 'Pagamento Confirmado',
     class: 'status-pago',
-    icon: '✅'
+    icon: '☑️'
   },
   enviado: {
     label: 'Pedido Enviado',
@@ -71,7 +71,9 @@ export default function MeusPedidosPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Erro ao buscar pedidos.');
+        throw new Error(
+          data.message || 'Erro ao buscar pedidos.'
+        );
       }
 
       setOrders(data.orders || []);
@@ -90,7 +92,7 @@ export default function MeusPedidosPage() {
 
     setSearchedEmail(email.trim());
 
-    fetchOrdersByEmail(email.trim());
+    await fetchOrdersByEmail(email.trim());
   }
 
   async function cancelOrder(orderId) {
@@ -122,7 +124,7 @@ export default function MeusPedidosPage() {
         );
       }
 
-      fetchOrdersByEmail(searchedEmail);
+      await fetchOrdersByEmail(searchedEmail);
     } catch (err) {
       setError(err.message);
     }
@@ -130,9 +132,14 @@ export default function MeusPedidosPage() {
 
   function getPaymentLabel(order) {
     if (order.payment_method === 'cartao') {
-      const installments = Number(order.card_installments || 1);
+      const installments = Number(
+        order.card_installments || 1
+      );
+
+      const total = Number(order.total || 0);
+
       const installmentValue =
-        Number(order.total || 0) / installments;
+        total / installments;
 
       if (installments > 1) {
         return (
@@ -165,14 +172,17 @@ export default function MeusPedidosPage() {
         }}
       >
         <div className="page-header">
-          <h1 className="page-title">Meus Pedidos</h1>
+          <h1 className="page-title">
+            Meus Pedidos
+          </h1>
 
           <p className="page-description">
-            Informe o e-mail utilizado na compra para consultar o histórico e o
-            status dos seus pedidos.
+            Informe o e-mail utilizado na compra para
+            consultar o histórico e o status dos seus pedidos.
           </p>
         </div>
 
+        {/* FORMULÁRIO DE BUSCA */}
         <form
           onSubmit={handleSearch}
           className="customer-order-search-form"
@@ -190,7 +200,9 @@ export default function MeusPedidosPage() {
               type="email"
               placeholder="Ex: joao@email.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
               required
             />
           </div>
@@ -199,23 +211,35 @@ export default function MeusPedidosPage() {
             className="button"
             type="submit"
             disabled={isLoading}
-            style={{ alignSelf: 'flex-end' }}
+            style={{
+              alignSelf: 'flex-end'
+            }}
           >
-            {isLoading ? 'Buscando...' : 'Buscar Pedidos'}
+            {isLoading
+              ? 'Buscando...'
+              : 'Buscar Pedidos'}
           </button>
         </form>
 
+        {/* ERRO */}
         {error && (
           <p
             className="error-message"
-            style={{ marginTop: '16px' }}
+            style={{
+              marginTop: '16px'
+            }}
           >
             {error}
           </p>
         )}
 
+        {/* RESULTADOS */}
         {orders !== null && (
-          <div style={{ marginTop: '32px' }}>
+          <div
+            style={{
+              marginTop: '32px'
+            }}
+          >
             {orders.length === 0 ? (
               <div
                 className="empty-state"
@@ -224,9 +248,15 @@ export default function MeusPedidosPage() {
                   padding: '40px 20px'
                 }}
               >
-                <p style={{ fontSize: '1.1rem' }}>
+                <p
+                  style={{
+                    fontSize: '1.1rem'
+                  }}
+                >
                   Nenhum pedido encontrado para{' '}
-                  <strong>{searchedEmail}</strong>.
+                  <strong>
+                    {searchedEmail}
+                  </strong>.
                 </p>
 
                 <p
@@ -235,7 +265,8 @@ export default function MeusPedidosPage() {
                     marginTop: '8px'
                   }}
                 >
-                  Verifique se o e-mail foi digitado corretamente.
+                  Verifique se o e-mail foi digitado
+                  corretamente.
                 </p>
               </div>
             ) : (
@@ -247,8 +278,13 @@ export default function MeusPedidosPage() {
                   }}
                 >
                   Exibindo {orders.length}{' '}
-                  {orders.length === 1 ? 'pedido' : 'pedidos'} para{' '}
-                  <strong>{searchedEmail}</strong>:
+                  {orders.length === 1
+                    ? 'pedido'
+                    : 'pedidos'}{' '}
+                  para{' '}
+                  <strong>
+                    {searchedEmail}
+                  </strong>:
                 </p>
 
                 <div
@@ -265,11 +301,22 @@ export default function MeusPedidosPage() {
                         icon: '📦'
                       };
 
+                    const installments = Number(
+                      order.card_installments || 1
+                    );
+
+                    const installmentValue =
+                      installments > 0
+                        ? Number(order.total || 0) /
+                          installments
+                        : Number(order.total || 0);
+
                     return (
                       <div
                         key={order.id}
                         className="customer-order-card"
                       >
+                        {/* CABEÇALHO DO PEDIDO */}
                         <div className="customer-order-header">
                           <div>
                             <span className="customer-order-number">
@@ -278,40 +325,54 @@ export default function MeusPedidosPage() {
 
                             <span className="customer-order-date">
                               Realizado em{' '}
-                              {formatDate(order.created_at)}
+                              {formatDate(
+                                order.created_at
+                              )}
                             </span>
                           </div>
 
                           <span
                             className={`order-status-badge ${statusInfo.class}`}
                           >
-                            {statusInfo.icon} {statusInfo.label}
+                            {statusInfo.icon}{' '}
+                            {statusInfo.label}
                           </span>
                         </div>
 
+                        {/* INFORMAÇÕES DO PEDIDO */}
                         <div className="customer-order-meta">
                           <span>
-                            <strong>Forma de Envio:</strong>{' '}
-                            {order.shipping_method === 'retirada'
+                            <strong>
+                              Forma de Envio:
+                            </strong>{' '}
+                            {order.shipping_method ===
+                            'retirada'
                               ? 'Retirada na Editora'
-                              : order.shipping_method === 'digital'
+                              : order.shipping_method ===
+                                'digital'
                                 ? 'Digital'
                                 : 'Correios'}
                           </span>
 
                           <span>
-                            <strong>Pagamento:</strong>{' '}
+                            <strong>
+                              Pagamento:
+                            </strong>{' '}
                             {getPaymentLabel(order)}
                           </span>
 
                           <span>
-                            <strong>Destinatário:</strong>{' '}
-                            {order.customer_name} (
+                            <strong>
+                              Destinatário:
+                            </strong>{' '}
+                            {order.customer_name}{' '}
+                            (
                             {order.shipping_city}/
                             {order.shipping_state})
                           </span>
                         </div>
 
+                        {/* ITENS DO PEDIDO */}
                         <div className="customer-order-items">
                           {order.items?.map((item) => (
                             <div
@@ -321,85 +382,117 @@ export default function MeusPedidosPage() {
                               <div>
                                 <strong
                                   style={{
-                                    fontSize: '0.95rem'
+                                    fontSize:
+                                      '0.95rem'
                                   }}
                                 >
                                   {item.title}
                                 </strong>
 
+                                {/* QUANTIDADE DO PRODUTO */}
                                 <div
                                   style={{
-                                    fontSize: '0.85rem',
-                                    color: 'var(--color-muted)'
+                                    fontSize:
+                                      '0.85rem',
+                                    color:
+                                      'var(--color-muted)'
                                   }}
                                 >
-                                  {item.quantity}×{' '}
-                                  {formatPrice(item.price)}
+                                  Quantidade:{' '}
+                                  {item.quantity}{' '}
+                                  ×{' '}
+                                  {formatPrice(
+                                    item.price
+                                  )}
                                 </div>
 
+                                {/* DOWNLOAD DO E-BOOK */}
                                 {item.isDigital &&
-                                  order.status === 'pago' && (
-                                    item.ebook_file ? (
-                                      <a
-                                        className="button secondary"
-                                        style={{
-                                          marginTop: '8px',
-                                          fontSize: '0.8rem',
-                                          display: 'inline-block'
-                                        }}
-                                        href={item.ebook_file}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        📥 Baixar e-book
-                                      </a>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        className="button secondary"
-                                        style={{
-                                          marginTop: '8px',
-                                          fontSize: '0.8rem'
-                                        }}
-                                        disabled
-                                      >
-                                        📥 Baixar e-book
-                                      </button>
-                                    )
-                                  )}
+                                  order.status ===
+                                    'pago' &&
+                                  (item.ebook_file ? (
+                                    <a
+                                      className="button secondary"
+                                      style={{
+                                        marginTop:
+                                          '8px',
+                                        fontSize:
+                                          '0.8rem',
+                                        display:
+                                          'inline-block'
+                                      }}
+                                      href={
+                                        item.ebook_file
+                                      }
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      📥 Baixar e-book
+                                    </a>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="button secondary"
+                                      style={{
+                                        marginTop:
+                                          '8px',
+                                        fontSize:
+                                          '0.8rem'
+                                      }}
+                                      disabled
+                                    >
+                                      📥 Baixar e-book
+                                    </button>
+                                  ))}
                               </div>
 
                               <strong
                                 style={{
-                                  fontSize: '0.95rem'
+                                  fontSize:
+                                    '0.95rem'
                                 }}
                               >
                                 {formatPrice(
-                                  item.price * item.quantity
+                                  Number(
+                                    item.price
+                                  ) *
+                                    Number(
+                                      item.quantity
+                                    )
                                 )}
                               </strong>
                             </div>
                           ))}
                         </div>
 
+                        {/* RODAPÉ DO PEDIDO */}
                         <div className="customer-order-footer">
                           <div>
-                            {order.shipping_cost > 0 ? (
+                            {Number(
+                              order.shipping_cost
+                            ) > 0 ? (
                               <span
                                 style={{
-                                  fontSize: '0.85rem',
-                                  color: 'var(--color-muted)'
+                                  fontSize:
+                                    '0.85rem',
+                                  color:
+                                    'var(--color-muted)'
                                 }}
                               >
                                 Frete:{' '}
-                                {formatPrice(order.shipping_cost)} |
-                                Subtotal:{' '}
-                                {formatPrice(order.subtotal)}
+                                {formatPrice(
+                                  order.shipping_cost
+                                )}{' '}
+                                | Subtotal:{' '}
+                                {formatPrice(
+                                  order.subtotal
+                                )}
                               </span>
                             ) : (
                               <span
                                 style={{
-                                  fontSize: '0.85rem',
+                                  fontSize:
+                                    '0.85rem',
                                   color: '#16a34a',
                                   fontWeight: 600
                                 }}
@@ -409,24 +502,63 @@ export default function MeusPedidosPage() {
                             )}
                           </div>
 
+                          {/* TOTAL + PARCELAMENTO */}
                           <div
                             style={{
                               fontSize: '1.2rem',
                               fontWeight: 800
                             }}
                           >
-                            Total: {formatPrice(order.total)}
+                            <div>
+                              Total:{' '}
+                              {formatPrice(
+                                order.total
+                              )}
+                            </div>
+
+                            {order.payment_method ===
+                              'cartao' &&
+                              installments > 1 && (
+                                <div
+                                  style={{
+                                    fontSize:
+                                      '0.9rem',
+                                    fontWeight: 500,
+                                    color:
+                                      'var(--color-muted)',
+                                    marginTop:
+                                      '4px'
+                                  }}
+                                >
+                                  Pagamento:{' '}
+                                  {installments}x de{' '}
+                                  {formatPrice(
+                                    installmentValue
+                                  )}
+                                </div>
+                              )}
                           </div>
 
-                          <div style={{ marginTop: '12px' }}>
-                            {order.status === 'pendente' && (
+                          {/* CANCELAR PEDIDO */}
+                          <div
+                            style={{
+                              marginTop: '12px'
+                            }}
+                          >
+                            {order.status ===
+                              'pendente' && (
                               <button
                                 type="button"
                                 className="button danger"
                                 onClick={() =>
-                                  cancelOrder(order.id)
+                                  cancelOrder(
+                                    order.id
+                                  )
                                 }
-                                style={{ marginRight: '8px' }}
+                                style={{
+                                  marginRight:
+                                    '8px'
+                                }}
                               >
                                 Cancelar Pedido
                               </button>

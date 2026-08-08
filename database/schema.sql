@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS orders (
     shipping_method ENUM('correios', 'retirada', 'digital') NOT NULL DEFAULT 'correios',
     shipping_cost DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     payment_method ENUM('pix', 'cartao') NOT NULL DEFAULT 'pix',
+    card_installments INT NOT NULL DEFAULT 1,
     subtotal DECIMAL(10, 2) NOT NULL,
     total DECIMAL(10, 2) NOT NULL,
     status ENUM('pendente', 'pago', 'enviado', 'entregue', 'cancelado') NOT NULL DEFAULT 'pendente',
