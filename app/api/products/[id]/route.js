@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequestPassword, isValidAdminPassword, unauthorizedResponse } from '@/lib/auth';
+import { getRequestPassword, isValidAdminPassword, unauthorizedResponse, authorizeApiRequest } from '@/lib/auth';
 import {
   deleteProduct,
   getProductById,
@@ -32,8 +32,10 @@ export async function GET(request) {
 }
 
 export async function PUT(request) {
-  if (!isValidAdminPassword(getRequestPassword(request))) {
-    return unauthorizedResponse();
+  const auth = await authorizeApiRequest(request, ['admin', 'editor']);
+  const reqPass = getRequestPassword(request);
+  if (!auth.authorized && !isValidAdminPassword(reqPass)) {
+    return unauthorizedResponse(auth.message, auth.status);
   }
 
   try {
@@ -55,8 +57,10 @@ export async function PUT(request) {
 }
 
 export async function DELETE(request) {
-  if (!isValidAdminPassword(getRequestPassword(request))) {
-    return unauthorizedResponse();
+  const auth = await authorizeApiRequest(request, ['admin', 'editor']);
+  const reqPass = getRequestPassword(request);
+  if (!auth.authorized && !isValidAdminPassword(reqPass)) {
+    return unauthorizedResponse(auth.message, auth.status);
   }
 
   try {

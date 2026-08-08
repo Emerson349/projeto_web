@@ -6,9 +6,14 @@
   --color-border: #d9ddd8;
   --color-primary: #155e63;
   --color-primary-dark: #0d4347;
+  --color-primary-light: #e8f0ef;
   --color-accent: #b44d2a;
   --color-danger: #a32929;
-  --shadow-soft: 0 10px 24px rgba(23, 31, 28, 0.08);
+  --shadow-soft: 0 2px 8px rgba(23, 31, 28, 0.06), 0 8px 24px rgba(23, 31, 28, 0.08);
+  --shadow-hover: 0 4px 12px rgba(23, 31, 28, 0.1), 0 16px 40px rgba(23, 31, 28, 0.12);
+  --shadow-glow: 0 0 0 3px rgba(21, 94, 99, 0.15);
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s ease;
   --max-width: 1120px;
 }
 
@@ -19,19 +24,23 @@
 html {
   min-width: 320px;
   background: var(--color-bg);
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   color: var(--color-text);
   background: var(--color-bg);
-  font-family: Arial, Helvetica, sans-serif;
-  line-height: 1.5;
+  font-family: var(--font-body, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 button,
@@ -88,11 +97,24 @@ button {
   color: #ffffff;
   background: var(--color-primary);
   font-weight: 700;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
-.button:hover,
-.button:focus {
+.button:hover {
   background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(21, 94, 99, 0.25);
+}
+
+.button:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-glow);
+}
+
+.button:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .button.secondary {
@@ -100,14 +122,25 @@ button {
   background: transparent;
 }
 
+.button.secondary:hover {
+  background: var(--color-primary-light);
+}
+
 .button.danger {
   border-color: var(--color-danger);
   background: var(--color-danger);
 }
 
+.button.danger:hover {
+  background: #8c2222;
+  box-shadow: 0 4px 12px rgba(163, 41, 41, 0.25);
+}
+
 .button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+  transform: none;
+  box-shadow: none;
 }
 
 .form-grid {
@@ -133,6 +166,15 @@ button {
   padding: 10px 12px;
   background: #ffffff;
   color: var(--color-text);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-glow);
 }
 
 .form-row textarea {
@@ -160,8 +202,10 @@ button {
   position: sticky;
   top: 0;
   z-index: 20;
-  border-bottom: 1px solid var(--color-border);
-  background: rgba(247, 247, 244, 0.96);
+  border-bottom: 1px solid rgba(217, 221, 216, 0.6);
+  background: rgba(247, 247, 244, 0.8);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
 }
 
 .header-inner,
@@ -208,31 +252,63 @@ button {
   font-weight: 700;
 }
 
+.main-nav a {
+  position: relative;
+  padding: 4px 0;
+  transition: color var(--transition-fast);
+}
+
+.main-nav a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 1px;
+  transition: width var(--transition-base);
+}
+
 .main-nav a:hover,
 .back-link:hover {
   color: var(--color-primary);
 }
 
+.main-nav a:hover::after {
+  width: 100%;
+}
+
 .site-footer {
-  border-top: 1px solid var(--color-border);
-  padding: 24px 0;
-  color: var(--color-muted);
-  background: #ffffff;
+  border-top: none;
+  padding: 32px 0;
+  color: rgba(255, 255, 255, 0.75);
+  background: linear-gradient(135deg, #0d4347 0%, #155e63 50%, #1a6b6f 100%);
 }
 
 .footer-inner {
-  align-items: flex-start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   flex-direction: column;
+  gap: 6px;
 }
 
 .footer-inner p {
   margin: 0;
+  font-size: 0.9rem;
+}
+
+.footer-inner p:first-child {
+  color: #ffffff;
+  font-weight: 600;
 }
 
 .home-hero {
-  padding: 40px 0 24px;
+  padding: 48px 0 32px;
   background:
-    linear-gradient(135deg, rgba(21, 94, 99, 0.1), rgba(180, 77, 42, 0.08)),
+    linear-gradient(135deg, rgba(21, 94, 99, 0.12), rgba(180, 77, 42, 0.06) 60%, rgba(21, 94, 99, 0.04)),
     var(--color-bg);
 }
 
@@ -250,9 +326,9 @@ button {
 .eyebrow {
   margin: 0;
   color: var(--color-accent);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -261,6 +337,7 @@ button {
   margin: 0;
   font-size: 2.4rem;
   line-height: 1.05;
+  letter-spacing: -0.02em;
 }
 
 .hero-copy p {
@@ -268,6 +345,7 @@ button {
   margin: 0;
   color: var(--color-muted);
   font-size: 1.05rem;
+  line-height: 1.65;
 }
 
 .hero-actions {
@@ -282,7 +360,7 @@ button {
   gap: 10px;
   padding: 16px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 12px;
   background: #ffffff;
   box-shadow: var(--shadow-soft);
 }
@@ -291,11 +369,19 @@ button {
   min-height: 72px;
   display: flex;
   align-items: flex-end;
-  border-radius: 6px;
-  padding: 12px;
+  border-radius: 8px;
+  padding: 14px;
   color: #ffffff;
   background: var(--color-primary);
   font-weight: 800;
+  font-size: 0.92rem;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: default;
+}
+
+.hero-panel span:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .hero-panel span:nth-child(2) {
@@ -339,6 +425,14 @@ button {
   border-radius: 6px;
   padding: 9px 12px;
   background: #ffffff;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.search-bar input:focus,
+.category-filter select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-glow);
 }
 
 .product-grid {
@@ -350,34 +444,64 @@ button {
   display: grid;
   overflow: hidden;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 10px;
   background: #ffffff;
   box-shadow: var(--shadow-soft);
+  transition: transform var(--transition-base), box-shadow var(--transition-base),
+    border-color var(--transition-base);
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: rgba(21, 94, 99, 0.2);
 }
 
 .product-cover,
 .detail-cover {
   display: flex;
-  min-height: 220px;
+  height: 320px;
   align-items: center;
   justify-content: center;
   padding: 20px;
   color: #ffffff;
-  background:
-    linear-gradient(145deg, rgba(21, 94, 99, 0.88), rgba(47, 73, 88, 0.88)),
-    #155e63;
+  background: radial-gradient(circle at 50% 30%, rgba(30, 90, 95, 0.95), rgba(13, 40, 43, 0.98)), #0d282b;
   font-size: 1.5rem;
   font-weight: 800;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.product-cover::before,
+.detail-cover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.12), transparent 70%);
+  pointer-events: none;
 }
 
 .product-cover img,
 .detail-cover img {
-  width: 100%;
-  height: 100%;
-  max-height: 360px;
-  object-fit: cover;
-  border-radius: 4px;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 2px 8px 8px 2px;
+  box-shadow:
+    -3px 0 8px rgba(0, 0, 0, 0.3),
+    4px 10px 24px rgba(0, 0, 0, 0.45);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(0);
+}
+
+.product-card:hover .product-cover img {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow:
+    -4px 0 12px rgba(0, 0, 0, 0.35),
+    6px 16px 32px rgba(0, 0, 0, 0.55);
 }
 
 .product-card-body {
@@ -394,13 +518,15 @@ button {
 }
 
 .product-meta span,
-.tag-row span {
+.tag-row span,
+.product-format-badge {
   border-radius: 999px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   color: var(--color-primary);
-  background: #e8f0ef;
-  font-size: 0.82rem;
+  background: var(--color-primary-light);
+  font-size: 0.8rem;
   font-weight: 800;
+  letter-spacing: 0.01em;
 }
 
 .product-card h2 {
@@ -515,8 +641,14 @@ button {
   border-radius: 6px;
   padding: 9px 10px;
   color: var(--color-primary);
-  background: #e8f0ef;
+  background: var(--color-primary-light);
   font-weight: 800;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.admin-sidebar a:hover {
+  background: #d5e6e4;
+  transform: translateX(2px);
 }
 
 .admin-heading {
@@ -579,7 +711,8 @@ button {
   }
 
   .product-cover {
-    min-height: 100%;
+    height: 100%;
+    min-height: 220px;
   }
 }
 
@@ -616,7 +749,7 @@ button {
   }
 
   .product-cover {
-    min-height: 260px;
+    height: 320px;
   }
 
   .form-columns {
@@ -1429,3 +1562,55 @@ button {
   }
 }
 
+/* ================================================
+   GLOBAL POLISH — Focus, Selection, Scrollbar
+   ================================================ */
+
+/* Accessible focus ring for all interactive elements */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Remove focus ring for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Text selection color */
+::selection {
+  background: rgba(21, 94, 99, 0.15);
+  color: var(--color-text);
+}
+
+/* Custom scrollbar — subtle teal */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(21, 94, 99, 0.25);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(21, 94, 99, 0.4);
+}
+
+/* Firefox scrollbar */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(21, 94, 99, 0.25) var(--color-bg);
+}
+
+/* Ocultar logotipo e indicador de desenvolvimento do Next.js */
+nextjs-portal,
+[data-nextjs-toast],
+[data-nextjs-dialog-overlay],
+#next-logo-container {
+  display: none !important;
+}

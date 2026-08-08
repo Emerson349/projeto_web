@@ -6,10 +6,12 @@ import ProductList from '@/components/ProductList';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
 export default function AdminProductsPage() {
-  const { adminPassword, isAuthenticated } = useAdminAuth();
+  const { adminPassword, isAuthenticated, hasRole } = useAdminAuth();
   const [products, setProducts] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  const canManageProducts = hasRole(['admin', 'editor']);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -24,7 +26,7 @@ export default function AdminProductsPage() {
       if (!response.ok) {
         setError(data.message || 'Não foi possível carregar os produtos.');
       } else {
-        setProducts(data.products);
+        setProducts(data.products || []);
       }
 
       setIsLoading(false);
@@ -34,6 +36,9 @@ export default function AdminProductsPage() {
   }, [isAuthenticated]);
 
   async function handleDelete(productId) {
+    if (!canManageProducts) return;
+    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+
     const response = await fetch(`/api/products/${productId}`, {
       method: 'DELETE',
       headers: {
@@ -54,10 +59,18 @@ export default function AdminProductsPage() {
     <div>
       <div className="admin-heading">
         <div>
-          <h1>Produtos</h1>
-          <p>Gerencie o catálogo público da loja.</p>
+          <h1>Catálogo de Produtos</h1>
+          <p>Visualização e gestão do catálogo de livros da editora.</p>
         </div>
-        <Link className="button" href="/admin/produtos/novo">Novo produto</Link>
+        {canManageProducts ? (
+          <Link className="button" href="/admin/produtos/novo">
+            Novo produto
+          </Link>
+        ) : (
+          <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+            Perfil Vendedor: Apenas consulta de catálogo.
+          </span>
+        )}
       </div>
 
       {error ? <p className="error-message">{error}</p> : null}
@@ -66,16 +79,18 @@ export default function AdminProductsPage() {
       ) : (
         <ProductList
           products={products}
-          adminActions={(product) => (
-            <div className="admin-card-actions">
-              <Link className="button secondary" href={`/admin/produtos/${product.id}/editar`}>
-                Editar
-              </Link>
-              <button className="button danger" type="button" onClick={() => handleDelete(product.id)}>
-                Excluir
-              </button>
-            </div>
-          )}
+          adminActions={(product) =>
+            canManageProducts ? (
+              <div className="admin-card-actions">
+                <Link className="button secondary" href={`/admin/produtos/${product.id}/editar`}>
+                  Editar
+                </Link>
+                <button className="button danger" type="button" onClick={() => handleDelete(product.id)}>
+                  Excluir
+                </button>
+              </div>
+            ) : null
+          }
         />
       )}
     </div>

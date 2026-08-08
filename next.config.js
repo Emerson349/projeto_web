@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  devIndicators: false
+};
 
-// Trigger env reload
 module.exports = nextConfig;
-

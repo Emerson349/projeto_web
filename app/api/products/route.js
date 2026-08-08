@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createProduct, getProducts } from '@/repositories/productsRepository';
-import { getRequestPassword, isValidAdminPassword, unauthorizedResponse } from '@/lib/auth';
+import { getRequestPassword, isValidAdminPassword, unauthorizedResponse, authorizeApiRequest } from '@/lib/auth';
 
 export async function GET(request) {
   try {
@@ -19,8 +19,10 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  if (!isValidAdminPassword(getRequestPassword(request))) {
-    return unauthorizedResponse();
+  const auth = await authorizeApiRequest(request, ['admin', 'editor']);
+  const reqPass = getRequestPassword(request);
+  if (!auth.authorized && !isValidAdminPassword(reqPass)) {
+    return unauthorizedResponse(auth.message, auth.status);
   }
 
   try {
